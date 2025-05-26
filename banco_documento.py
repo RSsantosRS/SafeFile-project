@@ -3,6 +3,7 @@ import sqlite3
 from datetime import datetime
 from documento import Documento
 import logging
+import hashlib
 
 logging.basicConfig(
     filename='app_documento.log',
@@ -17,7 +18,7 @@ def log_error(message):
     logging.error(message)
 
 class BancoDocumento:
-    def __init__(self, nome_banco = "banco_documento.sqlite"):
+    def __init__(self, nome_banco="banco_documento.sqlite"):
         self.nome_banco = os.path.join(os.path.dirname(__file__), nome_banco)
         self.conn = None
     
@@ -33,13 +34,13 @@ class BancoDocumento:
                 cursor = self.conn.cursor()
                 cursor.execute(
                     """
-                        CREATE TABLE IF NOT EXISTS Documento (
-                            nome_arquivo TEXT PRIMARY KEY,
-                            caminho TEXT NOT NULL,
-                            tipo_arquivo TEXT NOT NULL,
-                            data_criacao TEXT NOT NULL,
-                            tamanho_mb REAL
-                        )
+                    CREATE TABLE IF NOT EXISTS Documento (
+                        nome_arquivo TEXT PRIMARY KEY,
+                        caminho TEXT NOT NULL,
+                        tipo_arquivo TEXT NOT NULL,
+                        data_criacao TEXT NOT NULL,
+                        tamanho_mb REAL
+                    )
                     """
                 )
                 self.conn.commit()
@@ -47,24 +48,57 @@ class BancoDocumento:
             except sqlite3.Error as e:
                 log_error(f"Erro ao criar tabela Documento: {e}")
 
-    def inserir_documento(self, documento: Documento):
+    def criar_tabela_usuario(self):
         if self.conn:
             try:
                 cursor = self.conn.cursor()
                 cursor.execute(
-                    "INSERT INTO Documento VALUES (?, ?, ?, ?, ?)",
-                    (
-                        documento.nome_arquivo,
-                        documento.caminho,
-                        documento.tipo_arquivo,
-                        documento.data_criacao.strftime('%Y-%m-%d %H:%M:%S'),
-                        documento.tamanho_mb
+                    """
+                    CREATE TABLE IF NOT EXISTS Usuario (
+                        cpf TEXT PRIMARY KEY,
+                        senha_hash TEXT NOT NULL,
+                        nome TEXT,
+                        email TEXT
                     )
+                    """
                 )
                 self.conn.commit()
-                log_info(f"Inserção de novo documento: {documento.nome_arquivo}")
+                log_info("Tabela Usuario criada com sucesso")
             except sqlite3.Error as e:
-                print(f"Erro ao inserir documento: {e}")
+                log_error(f"Erro ao criar tabela Usuario: {e}")
+
+    def inserir_usuario(self, cpf: str, senha: str, nome: str = None, email: str = None):
+        if self.conn:
+            if not cpf:
+                log_error("CPF é obrigatório para inserir usuário")
+                return
+            try:
+                senha_hash = hashlib.sha256(senha.encode()).hexdigest()
+                cursor = self.conn.cursor()
+                cursor.execute(
+                    "INSERT INTO Usuario (cpf, senha_hash, nome, email) VALUES (?, ?, ?, ?)",
+                    (cpf, senha_hash, nome, email)
+                )
+                self.conn.commit()
+                log_info(f"Novo usuário inserido: {email}")
+            except sqlite3.IntegrityError as e:
+                log_error(f"Erro ao inserir usuário - dados duplicados: {e}")
+            except sqlite3.Error as e:
+                log_error(f"Erro ao inserir usuário: {e}")
+
+    def verificar_login(self, email: str, senha: str):
+        if self.conn:
+            try:
+                senha_hash = hashlib.sha256(senha.encode()).hexdigest()
+                cursor = self.conn.cursor()
+                cursor.execute(
+                    "SELECT * FROM Usuario WHERE email = ? AND senha_hash = ?",
+                    (email, senha_hash)
+                )
+                return cursor.fetchone() is not None
+            except sqlite3.Error as e:
+                log_error(f"Erro ao verificar login: {e}")
+        return False
 
     def atualizar_documento(self, documento: Documento):
         if self.conn:
@@ -140,4 +174,13 @@ class BancoDocumento:
     def fechar_conexao(self):
         if self.conn:
             self.conn.close()
-            self.conn = None 
+            self.conn = None
+
+if __name__ == "__main__":
+    banco = BancoDocumento()
+    banco.conectar()
+    banco.criar_tabela_usuario()  # **chamada OBRIGATÓRIA**
+    banco.criar_tabela_documento()  # se quiser também criar a tabela Documento
+
+
+
