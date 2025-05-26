@@ -4,28 +4,46 @@ from tkinter import messagebox
 import subprocess
 import sys
 import os
+import sqlite3
+import hashlib
+
+# --- Função para gerar hash SHA-256 da senha ---
+def gerar_hash_senha(senha):
+    return hashlib.sha256(senha.encode('utf-8')).hexdigest()
 
 # --- Função para o botão "Login" ---
 def processar_login():
-    email = entry_email.get()
-    senha = entry_senha.get()
+    email = entry_email.get().strip()
+    senha = entry_senha.get().strip()
 
     if not email or not senha:
         messagebox.showwarning("Campos Vazios", "Por favor, preencha seu email e senha.")
         return
 
-    # --- Validação de Placeholder (substitua pela sua lógica real) ---
-    # Em um aplicativo real, você verificaria contra um banco de dados
-    # e NUNCA armazenaria senhas em texto plano. Use hashes seguros.
-    if email == "usuario@exemplo.com" and senha == "senha123":
-        messagebox.showinfo("Login Bem-Sucedido", f"Bem-vindo, {email}!")
-        # Aqui você pode fechar a janela de login e abrir a tela principal do aplicativo
-        # Por exemplo, após um login bem-sucedido:
-        # janela_login.destroy()
-        # subprocess.Popen([sys.executable, "app_principal_usuario.py"]) # Exemplo
-        print("Login bem-sucedido, abrindo próxima tela (simulação)...")
-    else:
-        messagebox.showerror("Falha no Login", "Email ou senha inválidos.")
+    try:
+        conn = sqlite3.connect("banco_documento.sqlite")  # ajuste o caminho se necessário
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT nome, senha FROM Usuario WHERE email = ?", (email,))
+        resultado = cursor.fetchone()
+
+        if resultado:
+            nome_db, senha_hash_db = resultado
+            senha_hash_digitada = gerar_hash_senha(senha)
+            if senha_hash_db == senha_hash_digitada:
+                messagebox.showinfo("Login Bem-Sucedido", f"Bem-vindo, {nome_db}!")
+                # Aqui pode abrir a próxima tela ou redirecionar
+                print("Login bem-sucedido")
+                janela_login.destroy()
+                # subprocess.Popen([sys.executable, "app_principal_usuario.py"])  # Exemplo
+            else:
+                messagebox.showerror("Erro", "Senha incorreta.")
+        else:
+            messagebox.showerror("Erro", "Email não encontrado.")
+
+        conn.close()
+    except Exception as e:
+        messagebox.showerror("Erro", f"Erro ao acessar o banco de dados:\n{e}")
 
 # --- Funções de Navegação ---
 def ir_para_cadastro_desta_tela():
@@ -59,7 +77,6 @@ def ir_para_inicio_da_tela_login():
             messagebox.showerror("Erro de Navegação", f"Arquivo 'inicio.py' não encontrado em:\n{caminho_inicio_py}")
     except Exception as e:
         messagebox.showerror("Erro de Navegação", f"Não foi possível iniciar 'inicio.py':\n{e}")
-
 
 # --- Configurações da Janela Principal ---
 janela_login = tk.Tk()
@@ -144,7 +161,6 @@ label_senha = tk.Label(janela_login, text="Senha:", font=fonte_label_campo_str, 
 label_senha.place(relx=0.5, rely=y_pos_label_senha, anchor="center", width=largura_campos)
 entry_senha = tk.Entry(janela_login, font=fonte_entry_str, show="*", width=40)
 entry_senha.place(relx=0.5, rely=y_pos_entry_senha, anchor="center", width=largura_campos, height=altura_campos)
-
 
 # --- Botões ---
 LARGURA_BOTAO_PIXELS = 230 # Largura comum para os botões principais e secundários
