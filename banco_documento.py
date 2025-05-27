@@ -181,6 +181,3 @@ if __name__ == "__main__":
     banco.conectar()
     banco.criar_tabela_usuario()  # **chamada OBRIGATÓRIA**
     banco.criar_tabela_documento()  # se quiser também criar a tabela Documento
-
-
-
