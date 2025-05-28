@@ -7,9 +7,11 @@ import os
 import sqlite3
 import hashlib
 
+from banco_documento import BancoDocumento
+
 # --- Função para gerar hash SHA-256 da senha ---
 def gerar_hash_senha(senha):
-    return hashlib.sha256(senha.encode('utf-8')).hexdigest()
+    return hashlib.sha256(senha.encode()).hexdigest()
 
 # --- Função para o botão "Login" ---
 def processar_login():
@@ -21,13 +23,14 @@ def processar_login():
         return
 
     try:
-        # Ajuste o caminho se o banco de dados não estiver no mesmo diretório do script
-        db_path = os.path.join(os.path.dirname(__file__), "banco_documento.sqlite")
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
 
-        cursor.execute("SELECT nome, senha FROM Usuario WHERE email = ?", (email,))
-        resultado = cursor.fetchone()
+        banco = BancoDocumento()
+        banco.conectar()
+        resultado = banco.verificar_login(email, senha)
+        banco.fechar_conexao()
+
+        print(resultado)
+        print(gerar_hash_senha(senha))
 
         if resultado:
             nome_db, senha_hash_db = resultado
@@ -54,7 +57,6 @@ def processar_login():
         else:
             messagebox.showerror("Erro", "Email não encontrado.")
 
-        conn.close()
     except sqlite3.Error as e_sql:
         messagebox.showerror("Erro de Banco de Dados", f"Erro ao acessar o banco de dados:\n{e_sql}\nVerifique se o arquivo 'banco_documento.sqlite' existe no local correto e não está corrompido.")
     except Exception as e:

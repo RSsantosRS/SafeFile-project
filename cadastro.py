@@ -6,11 +6,13 @@ import os
 import sqlite3
 import hashlib
 
+from banco_documento import BancoDocumento
+from usuario import Usuario
+
 # --- Constantes ---
 CPF_PLACEHOLDER_TEXT = "somente números..."
 CPF_PLACEHOLDER_COLOR = "grey"
 CPF_NORMAL_TEXT_COLOR = "black"
-CAMINHO_BANCO = "banco_documento.sqlite"
 
 # --- Funções de navegação ---
 def ir_para_inicio_da_tela_cadastro():
@@ -29,11 +31,12 @@ def ir_para_inicio_da_tela_cadastro():
 # --- Banco de dados ---
 def cadastrar_usuario(nome, email, senha, cpf):
     try:
-        conexao = sqlite3.connect(CAMINHO_BANCO)
-        cursor = conexao.cursor()
-        cursor.execute("INSERT INTO Usuario (cpf, nome, email, senha) VALUES (?, ?, ?, ?)", (cpf, nome, email, senha))
-        conexao.commit()
-        conexao.close()
+
+        banco = BancoDocumento()
+        banco.conectar()
+        banco.inserir_usuario(Usuario(cpf=cpf, senha=senha, nome=nome, email=email))
+        banco.fechar_conexao()
+
         return True, "Usuário cadastrado com sucesso!"
     except sqlite3.IntegrityError:
         return False, "CPF já cadastrado. Use outro CPF."
@@ -66,9 +69,8 @@ def processar_cadastro():
     print(f"Senha: {senha}")  # Aqui o print da senha original
     print(f"CPF: {cpf_final}")
 
-    senha_hash = gerar_hash_senha(senha)  # Gerar hash da senha antes de salvar no banco
 
-    sucesso, mensagem = cadastrar_usuario(nome, email, senha_hash, cpf_final)  # Passa o hash para salvar
+    sucesso, mensagem = cadastrar_usuario(nome, email, senha, cpf_final)  # Passa o hash para salvar
 
     if sucesso:
         messagebox.showinfo("Cadastro", mensagem)

@@ -5,6 +5,8 @@ from documento import Documento
 import logging
 import hashlib
 
+from usuario import Usuario
+
 logging.basicConfig(
     filename='app_documento.log',
     level=logging.INFO,
@@ -56,7 +58,7 @@ class BancoDocumento:
                     """
                     CREATE TABLE IF NOT EXISTS Usuario (
                         cpf TEXT PRIMARY KEY,
-                        senha_hash TEXT NOT NULL,
+                        senha TEXT NOT NULL,
                         nome TEXT,
                         email TEXT
                     )
@@ -67,20 +69,20 @@ class BancoDocumento:
             except sqlite3.Error as e:
                 log_error(f"Erro ao criar tabela Usuario: {e}")
 
-    def inserir_usuario(self, cpf: str, senha: str, nome: str = None, email: str = None):
+    def inserir_usuario(self, usuario: Usuario):
         if self.conn:
-            if not cpf:
+            if not usuario.cpf:
                 log_error("CPF é obrigatório para inserir usuário")
                 return
             try:
-                senha_hash = hashlib.sha256(senha.encode()).hexdigest()
+                senha_hash = hashlib.sha256(usuario.senha.encode()).hexdigest()
                 cursor = self.conn.cursor()
                 cursor.execute(
-                    "INSERT INTO Usuario (cpf, senha_hash, nome, email) VALUES (?, ?, ?, ?)",
-                    (cpf, senha_hash, nome, email)
+                    "INSERT INTO Usuario (cpf, senha, nome, email) VALUES (?, ?, ?, ?)",
+                    (usuario.cpf, senha_hash, usuario.nome, usuario.email)
                 )
                 self.conn.commit()
-                log_info(f"Novo usuário inserido: {email}")
+                log_info(f"Novo usuário inserido: {usuario.email}")
             except sqlite3.IntegrityError as e:
                 log_error(f"Erro ao inserir usuário - dados duplicados: {e}")
             except sqlite3.Error as e:
@@ -89,13 +91,9 @@ class BancoDocumento:
     def verificar_login(self, email: str, senha: str):
         if self.conn:
             try:
-                senha_hash = hashlib.sha256(senha.encode()).hexdigest()
                 cursor = self.conn.cursor()
-                cursor.execute(
-                    "SELECT * FROM Usuario WHERE email = ? AND senha_hash = ?",
-                    (email, senha_hash)
-                )
-                return cursor.fetchone() is not None
+                cursor.execute("SELECT nome, senha FROM Usuario WHERE email = ?", (email,))
+                return cursor.fetchone()
             except sqlite3.Error as e:
                 log_error(f"Erro ao verificar login: {e}")
         return False
@@ -175,9 +173,3 @@ class BancoDocumento:
         if self.conn:
             self.conn.close()
             self.conn = None
-
-if __name__ == "__main__":
-    banco = BancoDocumento()
-    banco.conectar()
-    banco.criar_tabela_usuario()  # **chamada OBRIGATÓRIA**
-    banco.criar_tabela_documento()  # se quiser também criar a tabela Documento
