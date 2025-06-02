@@ -40,9 +40,9 @@ O sistema foi desenvolvido utilizando as seguintes bibliotecas Python:
 app_documento.log
 Este arquivo é um log de informações geradas pela aplicação. Ele registra eventos importantes, como a criação de tabelas no banco de dados. Por exemplo, há um registro indicando que a tabela Documento foi criada com sucesso.
 
-#arquivos e logs
+# Arquivos e logs
 
-banco_documento.py
+## Banco_documento.py
 Este módulo é responsável por toda a interação com o banco de dados SQLite, gerenciando tanto os documentos quanto os usuários.
 
 Configuração de Log: Configura o sistema de log para registrar informações e erros em app_documento.log.
@@ -58,7 +58,7 @@ apagar_documento(nome_arquivo: str): Remove um documento da tabela Documento usa
 buscar_todos_documentos(): Retorna uma lista de todos os documentos registrados no banco de dados.
 buscar_documento_por_nome(nome_arquivo: str): Busca e retorna um objeto Documento específico com base no nome_arquivo.
 fechar_conexao(): Encerra a conexão com o banco de dados.
-cadastro.py
+## Cadastro.py
 Este script gerencia a interface gráfica e a lógica para o cadastro de novos usuários no sistema SafeFile.
 
 Constantes: Define textos de placeholder e cores para o campo de CPF.
@@ -80,7 +80,7 @@ adicionar_label_entry(texto, y_label, y_entry): Função auxiliar para criar e p
 Cria os campos de entrada para Nome Completo, Email, Senha (ocultando caracteres) e CPF (com placeholder).
 Botões: Adiciona botões "Cadastrar" e "Voltar", configurando suas aparências e comandos associados.
 Loop Principal: Inicia o loop principal do Tkinter para exibir a janela.
-documento.py
+## Documento.py
 Este módulo define a estrutura de dados para um documento no sistema SafeFile.
 
 Documento Classe: Uma dataclass que encapsula os atributos de um documento, incluindo:
@@ -98,7 +98,7 @@ Conecta ao banco de dados.
 Chama o método criar_tabela_documento() para garantir que a tabela Documento exista.
 Fecha a conexão com o banco de dados.
 É um script utilitário para setup inicial do banco de dados.
-gerenciador.py
+## Gerenciador.py
 Este script implementa a interface gráfica principal do gerenciador de arquivos, permitindo ao usuário navegar, criar, apagar, renomear e mover arquivos e pastas.
 
 Configurações da Janela Principal: Define o título da janela, dimensões fixas e outras configurações básicas do Tkinter.
@@ -128,10 +128,10 @@ scrollbar: Barra de rolagem para o Treeview.
 frame_botoes_acao: Contém os botões para as operações de CRUD (Criar Arquivo, Criar Pasta, Apagar, Renomear, Mover).
 Inicialização: Chama funções para desenhar o gradiente e atualizar a lista de arquivos na inicialização da janela.
 Loop Principal: Inicia o loop principal do Tkinter.
-inicio.py
+## Inicio.py
 Este script é a tela de menu principal do aplicativo SafeFile, oferecendo opções para login e cadastro.
 
-Funções de Navegação:
+## Funções de Navegação:
 ir_para_inicio(): Redireciona para a própria tela de início (recarrega).
 ir_para_login(): Fecha a janela atual e abre o script login.py.
 ir_para_cadastro(): Fecha a janela atual e abre o script cadastro.py.
@@ -142,13 +142,13 @@ Canvas para o Gradiente de Fundo:
 canvas_fundo: Um widget Canvas que ocupa toda a janela para desenhar o gradiente de fundo.
 desenhar_titulo_no_canvas(): Desenha o texto "SafeFile" com a fonte e cor definidas no canvas.
 desenhar_gradiente(event=None): Esta função é responsável por criar o efeito de gradiente horizontal no fundo da janela, desenhando linhas finas com cores interpoladas. É chamada na inicialização e também quando a janela é redimensionada (embora a janela seja fixa, o bind está presente).
-Botões:
+## Botões:
 "Login": Botão principal para acessar a tela de login.
 "Primeira vez? Cadastre-se": Botão secundário para navegar até a tela de cadastro.
 "Voltar para o Início": Botão secundário que, neste contexto, recarrega a própria tela inicial.
 Os botões são estilizados com cores e fontes específicas e posicionados centralizadamente na tela.
 Loop Principal: janela.mainloop() inicia o loop de eventos do Tkinter, mantendo a janela aberta e responsiva às interações do usuário.
-login.py
+## Login.py
 Este script é responsável pela interface e lógica de autenticação de usuários no sistema SafeFile.
 
 Função de Hashing de Senha:
@@ -162,7 +162,7 @@ Chama banco.verificar_login(email, senha) para buscar o usuário e a senha hashe
 Compara a senha digitada (após hashing) com a senha armazenada no banco.
 Em caso de login bem-sucedido, exibe uma mensagem de boas-vindas e tenta abrir o script gerenciador.py, fechando a janela de login.
 Em caso de falha (senha incorreta, email não encontrado, erros de banco de dados), exibe mensagens de erro apropriadas.
-Funções de Navegação:
+## Funções de Navegação:
 ir_para_cadastro_desta_tela(): Fecha a janela de login e abre a tela de cadastro (cadastro.py).
 ir_para_inicio_da_tela_login(): Fecha a janela de login e abre a tela inicial (inicio.py).
 Configurações da Janela Principal (janela_login):
@@ -175,7 +175,7 @@ desenhar_gradiente(event=None): Responsável por criar o efeito de gradiente de 
 Campos de Login:
 Labels e Entry widgets para "Email" e "Senha". O campo de senha oculta os caracteres digitados (show="*").
 Os campos são posicionados centralizadamente com largura e altura definidas.
-Botões:
+## Botões:
 "Login": Botão principal que aciona a função processar_login.
 "Primeira vez? Cadastre-se": Botão que redireciona para a tela de cadastro.
 "Voltar para o Início": Botão que redireciona para a tela inicial.
@@ -184,8 +184,8 @@ Loop Principal: janela_login.mainloop() inicia o loop de eventos do Tkinter.
 README.md
 Este é o arquivo README do projeto, que fornece uma breve descrição do SafeFile.
 
-Descrição: Indica que o SafeFile é um "projeto acadêmico de um gerenciador de arquivos para a matéria de programação rápida em python, na universidade Estácio de Sá".
-usuario.py
+## Descrição: Indica que o SafeFile é um "projeto acadêmico de um gerenciador de arquivos para a matéria de programação rápida em python, na universidade Estácio de Sá".
+## Usuario.py
 Este módulo define a estrutura de dados para um usuário no sistema SafeFile.
 
 Usuario Classe: Uma dataclass que encapsula os atributos de um usuário, incluindo:
