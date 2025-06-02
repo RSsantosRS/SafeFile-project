@@ -173,3 +173,39 @@ class BancoDocumento:
         if self.conn:
             self.conn.close()
             self.conn = None
+
+    def inserir_documento(self, documento: Documento):
+        if self.conn:
+            try:
+                cursor = self.conn.cursor()
+                cursor.execute(
+                    "INSERT INTO Documento (nome_arquivo, caminho, tipo_arquivo, data_criacao, tamanho_mb) VALUES (?, ?, ?, ?, ?)",
+                    (documento.nome_arquivo, documento.caminho, documento.tipo_arquivo, 
+                     documento.data_criacao.strftime('%Y-%m-%d %H:%M:%S'), documento.tamanho_mb)
+                )
+                self.conn.commit()
+                log_info(f"Novo documento inserido: {documento.nome_arquivo}")
+            except sqlite3.IntegrityError as e:
+                log_error(f"Erro ao inserir documento - dados duplicados: {e}")
+                raise
+            except sqlite3.Error as e:
+                log_error(f"Erro ao inserir documento: {e}")
+
+    def atualizar_documento_por_nome(self, nome_antigo: str, novo_documento: Documento):
+        if self.conn:
+            try:
+                cursor = self.conn.cursor()
+                cursor.execute(
+                    """
+                    UPDATE Documento 
+                    SET nome_arquivo=?, caminho=?, tipo_arquivo=?, data_criacao=?, tamanho_mb=?
+                    WHERE nome_arquivo=?
+                    """,
+                    (novo_documento.nome_arquivo, novo_documento.caminho, novo_documento.tipo_arquivo,
+                     novo_documento.data_criacao.strftime('%Y-%m-%d %H:%M:%S'),
+                     novo_documento.tamanho_mb, nome_antigo)
+                )
+                self.conn.commit()
+                log_info(f"Documento atualizado: {nome_antigo} -> {novo_documento.nome_arquivo}")
+            except sqlite3.Error as e:
+                log_error(f"Erro ao atualizar documento: {e}")
