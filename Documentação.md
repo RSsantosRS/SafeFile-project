@@ -181,10 +181,7 @@ Os campos são posicionados centralizadamente com largura e altura definidas.
 "Voltar para o Início": Botão que redireciona para a tela inicial.
 Todos os botões são estilizados com cores, fontes e efeitos de hover.
 Loop Principal: janela_login.mainloop() inicia o loop de eventos do Tkinter.
-README.md
-Este é o arquivo README do projeto, que fornece uma breve descrição do SafeFile.
 
-## Descrição: Indica que o SafeFile é um "projeto acadêmico de um gerenciador de arquivos para a matéria de programação rápida em python, na universidade Estácio de Sá".
 ## Usuario.py
 Este módulo define a estrutura de dados para um usuário no sistema SafeFile.
 
