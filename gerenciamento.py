@@ -32,6 +32,7 @@ fonte_titulo_str = ("Arial", 36, "bold")
 fonte_geral_str = ("Arial", 10)
 fonte_botao_acao_str = ("Arial", 10, "bold")
 fonte_botao_relatorio_str = ("Arial", 14, "bold")
+fonte_botao_voltar_inicio_str = ("Arial", 10, "bold") # Garante que esta fonte existe
 
 # --- Canvas para o Gradiente de Fundo ---
 canvas_fundo = tk.Canvas(janela, highlightthickness=0)
@@ -75,21 +76,21 @@ def desenhar_gradiente(event=None):
     if 'botao_voltar_inicio_widget' in globals() and botao_voltar_inicio_widget.winfo_exists():
         botao_voltar_inicio_widget.lift()
 
-# --- Função para Navegação para Início ---
-def ir_para_script_inicio():
-    print("Gerenciador de Documentos: Voltando para o Início...")
+# --- Função para Retornar ao Gerenciador de Arquivos ---
+def retornar_ao_gerenciador():
+    print("Gerenciador de Documentos: Retornando para o Gerenciador de Arquivos...")
     try:
         script_dir = os.path.dirname(__file__)
-        caminho_inicio_py = os.path.join(script_dir, "inicio.py")
+        caminho_gerenciador_py = os.path.join(script_dir, "gerenciador.py") # Caminho para gerenciador.py
 
-        if os.path.exists(caminho_inicio_py):
-            janela.destroy()
-            subprocess.Popen([sys.executable, caminho_inicio_py])
-            print(f"Gerenciador de Documentos: Executando '{caminho_inicio_py}'")
+        if os.path.exists(caminho_gerenciador_py):
+            janela.destroy() # Destrói a janela atual
+            subprocess.Popen([sys.executable, caminho_gerenciador_py])
+            print(f"Gerenciador de Documentos: Executando '{caminho_gerenciador_py}'")
         else:
-            messagebox.showerror("Erro de Navegação", f"Arquivo 'inicio.py' não encontrado em:\n{caminho_inicio_py}", parent=janela)
+            messagebox.showerror("Erro de Navegação", f"Arquivo 'gerenciador.py' não encontrado em:\n{caminho_gerenciador_py}", parent=janela)
     except Exception as e:
-        messagebox.showerror("Erro de Navegação", f"Não foi possível iniciar 'inicio.py':\n{e}", parent=janela)
+        messagebox.showerror("Erro de Navegação", f"Não foi possível iniciar 'gerenciador.py':\n{e}", parent=janela)
 
 # --- Função para Acessar Relatório ---
 def acessar_relatorio():
@@ -107,16 +108,16 @@ def acessar_relatorio():
     except Exception as e:
         messagebox.showerror("Erro de Navegação", f"Não foi possível iniciar 'relatorio.py':\n{e}", parent=janela)
 
-# --- Botão Voltar ao Início ---
-botao_voltar_inicio_widget = tk.Button(
+# --- Botão Retornar (substituindo "Voltar ao Início") ---
+botao_voltar_inicio_widget = tk.Button( # Mantido o nome da variável para não quebrar a referência no desenhar_gradiente
     janela,
-    text="Voltar ao Início",
-    font=fonte_botao_acao_str,
+    text="Retornar", # Texto alterado
+    font=fonte_botao_voltar_inicio_str,
     fg=cor_botao_voltar_inicio_fg,
     bg=cor_botao_voltar_inicio_bg,
     activebackground=cor_azul_claro,
     activeforeground="white",
-    command=ir_para_script_inicio,
+    command=retornar_ao_gerenciador, # Comando alterado
     relief=tk.FLAT,
     borderwidth=0,
     highlightthickness=0,
@@ -276,4 +277,4 @@ janela.update_idletasks()
 desenhar_gradiente()
 canvas_fundo.bind("<Configure>", desenhar_gradiente)
 
-janela.mainloop() 
+janela.mainloop()

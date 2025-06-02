@@ -365,7 +365,6 @@ def abrir_gerenciamento():
         caminho_gerenciamento_py = os.path.join(script_dir, "gerenciamento.py")
 
         if os.path.exists(caminho_gerenciamento_py):
-            janela.destroy()
             subprocess.Popen([sys.executable, caminho_gerenciamento_py])
             print(f"Gerenciador: Executando '{caminho_gerenciamento_py}'")
         else:
