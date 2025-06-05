@@ -7,4 +7,5 @@ if __name__ == "__main__":
     banco = BancoDocumento()
     banco.conectar()                                                                                                                                    
     banco.criar_tabela_documento()
+    banco.criar_tabela_usuario()
     banco.fechar_conexao() 

@@ -1,35 +1,25 @@
 import os
 import sqlite3
 from datetime import datetime
+from def_logs import log_error, log_info
 from documento import Documento
-import logging
 import hashlib
-
 from usuario import Usuario
-
-logging.basicConfig(
-    filename='app_documento.log',
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
-def log_info(message):
-    logging.info(message)
-
-def log_error(message):
-    logging.error(message)
 
 class BancoDocumento:
     def __init__(self, nome_banco="banco_documento.sqlite"):
-        self.nome_banco = os.path.join(os.path.dirname(__file__), nome_banco)
+        # Define e cria a pasta 'banco' automaticamente se não existir
+        pasta_banco = os.path.join(os.path.dirname(__file__), "banco")
+        os.makedirs(pasta_banco, exist_ok=True)
+        self.nome_banco = os.path.join(pasta_banco, nome_banco)
         self.conn = None
-    
+
     def conectar(self):
         try:
             self.conn = sqlite3.connect(self.nome_banco)
         except sqlite3.Error as e:
             print(f"Erro ao conectar ao banco de dados: {e}")
-    
+
     def criar_tabela_documento(self):
         if self.conn:
             try:

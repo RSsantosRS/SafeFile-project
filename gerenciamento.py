@@ -32,7 +32,7 @@ fonte_titulo_str = ("Arial", 36, "bold")
 fonte_geral_str = ("Arial", 10)
 fonte_botao_acao_str = ("Arial", 10, "bold")
 fonte_botao_relatorio_str = ("Arial", 14, "bold")
-fonte_botao_voltar_inicio_str = ("Arial", 10, "bold") # Garante que esta fonte existe
+fonte_botao_voltar_inicio_str = ("Arial", 10, "bold")
 
 # --- Canvas para o Gradiente de Fundo ---
 canvas_fundo = tk.Canvas(janela, highlightthickness=0)
@@ -81,10 +81,10 @@ def retornar_ao_gerenciador():
     print("Gerenciador de Documentos: Retornando para o Gerenciador de Arquivos...")
     try:
         script_dir = os.path.dirname(__file__)
-        caminho_gerenciador_py = os.path.join(script_dir, "gerenciador.py") # Caminho para gerenciador.py
+        caminho_gerenciador_py = os.path.join(script_dir, "gerenciador.py")
 
         if os.path.exists(caminho_gerenciador_py):
-            janela.destroy() # Destrói a janela atual
+            janela.destroy()
             subprocess.Popen([sys.executable, caminho_gerenciador_py])
             print(f"Gerenciador de Documentos: Executando '{caminho_gerenciador_py}'")
         else:
@@ -108,16 +108,16 @@ def acessar_relatorio():
     except Exception as e:
         messagebox.showerror("Erro de Navegação", f"Não foi possível iniciar 'relatorio.py':\n{e}", parent=janela)
 
-# --- Botão Retornar (substituindo "Voltar ao Início") ---
-botao_voltar_inicio_widget = tk.Button( # Mantido o nome da variável para não quebrar a referência no desenhar_gradiente
+# --- Botão Retornar ---
+botao_voltar_inicio_widget = tk.Button(
     janela,
-    text="Retornar", # Texto alterado
+    text="Retornar",
     font=fonte_botao_voltar_inicio_str,
     fg=cor_botao_voltar_inicio_fg,
     bg=cor_botao_voltar_inicio_bg,
     activebackground=cor_azul_claro,
     activeforeground="white",
-    command=retornar_ao_gerenciador, # Comando alterado
+    command=retornar_ao_gerenciador,
     relief=tk.FLAT,
     borderwidth=0,
     highlightthickness=0,
@@ -125,47 +125,57 @@ botao_voltar_inicio_widget = tk.Button( # Mantido o nome da variável para não 
 )
 botao_voltar_inicio_widget.place(relx=0.98, rely=0.02, anchor="ne", x=-10, y=10)
 
-# --- Botão Acessar Relatório ---
-botao_relatorio = tk.Button(
-    janela,
-    text="Acessar Relatório",
-    font=fonte_botao_relatorio_str,
-    fg=cor_botao_acao_fg_text,
-    bg=cor_botao_acao_bg,
-    activebackground="#E0E0E0",
-    activeforeground=cor_botao_acao_fg_text,
-    command=acessar_relatorio,
-    relief=tk.FLAT,
-    borderwidth=0,
-    highlightthickness=0,
-    cursor="hand2",
-    width=20,
-    height=3
-)
-botao_relatorio.place(relx=0.5, rely=0.5, anchor="center")
-
 # --- Inicialização do Banco de Dados ---
 banco = BancoDocumento()
 banco.conectar()
 
-# --- Funções de Gerenciamento de Documentos ---
-def adicionar_documento():
-    nome_arquivo = simpledialog.askstring("Adicionar", "Nome do arquivo:", parent=janela)
-    if not nome_arquivo:
+# --- Variáveis para o Formulário ---
+var_nome_arquivo = tk.StringVar()
+var_caminho = tk.StringVar()
+var_tipo_arquivo = tk.StringVar()
+var_tamanho_mb = tk.StringVar()
+var_documento_selecionado = tk.StringVar(value="Novo documento")
+
+# --- Função para Atualizar o Formulário ---
+def atualizar_formulario(*args):
+    documento_selecionado = var_documento_selecionado.get()
+    if documento_selecionado == "Novo documento":
+        var_nome_arquivo.set("")
+        var_caminho.set("")
+        var_tipo_arquivo.set("")
+        var_tamanho_mb.set("")
+    else:
+        documento = banco.buscar_documento_por_nome(documento_selecionado)
+        if documento:
+            var_nome_arquivo.set(documento.nome_arquivo)
+            var_caminho.set(documento.caminho)
+            var_tipo_arquivo.set(documento.tipo_arquivo)
+            var_tamanho_mb.set(str(documento.tamanho_mb))
+
+# --- Função para Atualizar o Combobox ---
+def atualizar_combobox():
+    documentos = banco.buscar_todos_documentos()
+    valores = ["Novo documento"] + [doc.nome_arquivo for doc in documentos]
+    combo_documentos['values'] = valores
+    combo_documentos.set("Novo documento")
+
+# --- Função para Enviar o Formulário ---
+def enviar_formulario():
+    nome_arquivo = var_nome_arquivo.get()
+    caminho = var_caminho.get()
+    tipo_arquivo = var_tipo_arquivo.get()
+    tamanho_mb = var_tamanho_mb.get()
+
+    if not all([nome_arquivo, caminho, tipo_arquivo, tamanho_mb]):
+        messagebox.showerror("Erro", "Todos os campos são obrigatórios!", parent=janela)
         return
-        
-    caminho = simpledialog.askstring("Adicionar", "Caminho do arquivo:", parent=janela)
-    if not caminho:
+
+    try:
+        tamanho_mb = float(tamanho_mb)
+    except ValueError:
+        messagebox.showerror("Erro", "O tamanho deve ser um número válido!", parent=janela)
         return
-        
-    tipo_arquivo = simpledialog.askstring("Adicionar", "Tipo do arquivo:", parent=janela)
-    if not tipo_arquivo:
-        return
-        
-    tamanho_mb = simpledialog.askfloat("Adicionar", "Tamanho em MB:", parent=janela)
-    if tamanho_mb is None:
-        return
-        
+
     documento = Documento(
         nome_arquivo=nome_arquivo,
         caminho=caminho,
@@ -173,108 +183,97 @@ def adicionar_documento():
         data_criacao=datetime.now(),
         tamanho_mb=tamanho_mb
     )
-    
-    try:
-        banco.inserir_documento(documento)
-        messagebox.showinfo("Sucesso", "Documento adicionado com sucesso!", parent=janela)
-    except Exception as e:
-        messagebox.showerror("Erro", f"Erro ao adicionar documento: {str(e)}", parent=janela)
 
-def atualizar_documento():
-    nome_arquivo = simpledialog.askstring("Atualizar", "Nome do arquivo a ser atualizado:", parent=janela)
-    if not nome_arquivo:
-        return
-        
-    documento = banco.buscar_documento_por_nome(nome_arquivo)
-    if not documento:
-        messagebox.showerror("Erro", "Documento não encontrado!", parent=janela)
-        return
-        
-    novo_nome = simpledialog.askstring("Atualizar", "Novo nome do arquivo:", initialvalue=documento.nome_arquivo, parent=janela)
-    if not novo_nome:
-        return
-        
-    caminho = simpledialog.askstring("Atualizar", "Novo caminho:", initialvalue=documento.caminho, parent=janela)
-    if not caminho:
-        return
-        
-    tipo_arquivo = simpledialog.askstring("Atualizar", "Novo tipo:", initialvalue=documento.tipo_arquivo, parent=janela)
-    if not tipo_arquivo:
-        return
-        
-    tamanho_mb = simpledialog.askfloat("Atualizar", "Novo tamanho em MB:", initialvalue=documento.tamanho_mb, parent=janela)
-    if tamanho_mb is None:
-        return
-    
+    documento_selecionado = var_documento_selecionado.get()
     try:
-        # Se o nome foi alterado, precisamos fazer uma atualização especial
-        if novo_nome != documento.nome_arquivo:
-            documento.nome_arquivo = novo_nome
-            documento.caminho = caminho
-            documento.tipo_arquivo = tipo_arquivo
-            documento.tamanho_mb = tamanho_mb
-            banco.atualizar_documento_por_nome(nome_arquivo, documento)
+        if documento_selecionado == "Novo documento":
+            banco.inserir_documento(documento)
+            messagebox.showinfo("Sucesso", "Documento adicionado com sucesso!", parent=janela)
         else:
-            documento.caminho = caminho
-            documento.tipo_arquivo = tipo_arquivo
-            documento.tamanho_mb = tamanho_mb
-            banco.atualizar_documento(documento)
-            
-        messagebox.showinfo("Sucesso", "Documento atualizado com sucesso!", parent=janela)
+            banco.atualizar_documento_por_nome(documento_selecionado, documento)
+            messagebox.showinfo("Sucesso", "Documento atualizado com sucesso!", parent=janela)
+        atualizar_combobox()
     except Exception as e:
-        messagebox.showerror("Erro", f"Erro ao atualizar documento: {str(e)}", parent=janela)
+        messagebox.showerror("Erro", f"Erro ao processar documento: {str(e)}", parent=janela)
 
+# --- Função para Excluir Documento ---
 def excluir_documento():
-    nome_arquivo = simpledialog.askstring("Excluir", "Nome do arquivo a ser excluído:", parent=janela)
-    if not nome_arquivo:
+    documento_selecionado = var_documento_selecionado.get()
+    if documento_selecionado == "Novo documento":
+        messagebox.showerror("Erro", "Selecione um documento para excluir!", parent=janela)
         return
-        
-    if messagebox.askyesno("Confirmar", f"Deseja realmente excluir o documento {nome_arquivo}?", parent=janela):
+
+    if messagebox.askyesno("Confirmar", f"Deseja realmente excluir o documento {documento_selecionado}?", parent=janela):
         try:
-            banco.apagar_documento(nome_arquivo)
+            banco.apagar_documento(documento_selecionado)
             messagebox.showinfo("Sucesso", "Documento excluído com sucesso!", parent=janela)
+            atualizar_combobox()
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao excluir documento: {str(e)}", parent=janela)
 
-def buscar_documento():
-    nome_arquivo = simpledialog.askstring("Buscar", "Nome do arquivo a ser buscado:", parent=janela)
-    if not nome_arquivo:
-        return
-        
-    documento = banco.buscar_documento_por_nome(nome_arquivo)
-    if documento:
-        mensagem = f"""
-        Nome: {documento.nome_arquivo}
-        Caminho: {documento.caminho}
-        Tipo: {documento.tipo_arquivo}
-        Data de Criação: {documento.data_criacao}
-        Tamanho: {documento.tamanho_mb} MB
-        """
-        messagebox.showinfo("Documento Encontrado", mensagem, parent=janela)
-    else:
-        messagebox.showinfo("Busca", "Documento não encontrado!", parent=janela)
+# --- Frame Central para o Formulário ---
+frame_central = tk.Frame(janela, bg=cor_azul_claro, bd=2, relief=tk.GROOVE)
+frame_central.place(relx=0.5, rely=0.5, anchor="center", width=600, height=400)
+
+# --- Combobox para Seleção de Documento ---
+combo_documentos = ttk.Combobox(frame_central, textvariable=var_documento_selecionado, state="readonly", font=fonte_geral_str)
+combo_documentos.pack(pady=10)
+combo_documentos.bind("<<ComboboxSelected>>", atualizar_formulario)
+
+# --- Campos do Formulário ---
+campos = [
+    ("Nome do Arquivo:", var_nome_arquivo),
+    ("Caminho:", var_caminho),
+    ("Tipo do Arquivo:", var_tipo_arquivo),
+    ("Tamanho (MB):", var_tamanho_mb)
+]
+
+for i, (label_text, var) in enumerate(campos):
+    frame_campo = tk.Frame(frame_central, bg=cor_azul_claro)
+    frame_campo.pack(pady=5)
+    
+    label = tk.Label(frame_campo, text=label_text, font=fonte_geral_str, bg=cor_azul_claro)
+    label.pack(anchor="w")
+    
+    entry = tk.Entry(frame_campo, textvariable=var, font=fonte_geral_str, width=50)
+    entry.pack(anchor="w")
+
+# --- Botão Enviar ---
+botao_enviar = tk.Button(
+    frame_central,
+    text="Enviar",
+    font=fonte_botao_acao_str,
+    fg=cor_botao_acao_fg_text,
+    bg=cor_botao_acao_bg,
+    command=enviar_formulario,
+    relief=tk.FLAT,
+    activebackground="#E0E0E0",
+    activeforeground=cor_botao_acao_fg_text,
+    width=15,
+    height=2
+)
+botao_enviar.pack(pady=10)
 
 # --- Frame para Botões de Ação ---
-frame_botoes_acao = tk.Frame(janela, bg=cor_azul_escuro)
-frame_botoes_acao.place(relx=0.05, rely=0.83, relwidth=0.9, height=80)
+frame_botoes_acao = tk.Frame(janela, bd=2, relief=tk.GROOVE)
+frame_botoes_acao.place(relx=0.05, rely=0.90, relwidth=0.9, height=50)
 
 botoes_info = [
-    ("Adicionar", adicionar_documento),
-    ("Atualizar", atualizar_documento),
     ("Excluir", excluir_documento),
-    ("Buscar", buscar_documento)
+    ("Acessar Relatório", acessar_relatorio)
 ]
 
 for i, (texto, comando) in enumerate(botoes_info):
     btn = tk.Button(frame_botoes_acao, text=texto, command=comando,
                     font=fonte_botao_acao_str, fg=cor_botao_acao_fg_text, bg=cor_botao_acao_bg,
                     relief=tk.FLAT, activebackground="#E0E0E0", activeforeground=cor_botao_acao_fg_text,
-                    width=12, height=2)
+                    width=15, height=2)
     btn.pack(side=tk.LEFT, expand=True, padx=5, pady=10)
 
 # --- Inicialização ---
 janela.update_idletasks()
 desenhar_gradiente()
 canvas_fundo.bind("<Configure>", desenhar_gradiente)
+atualizar_combobox()
 
 janela.mainloop()
