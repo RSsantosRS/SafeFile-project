@@ -1,0 +1,21 @@
+2025-06-06 15:34:20,179 - ERROR - Erro ao verificar login: no such table: Usuario
+2025-06-06 15:34:39,186 - ERROR - Erro ao inserir usuário: no such table: Usuario
+2025-06-06 15:34:46,669 - ERROR - Erro ao verificar login: no such table: Usuario
+2025-06-06 15:35:56,685 - INFO - Tabela Documento criada com sucesso
+2025-06-06 15:35:56,689 - INFO - Tabela Usuario criada com sucesso
+2025-06-06 15:38:33,883 - INFO - Novo usuário inserido: caio@gmail.com
+2025-06-06 15:39:19,298 - INFO - Consulta de todos os documentos
+2025-06-06 15:45:53,347 - INFO - Consulta de todos os documentos
+2025-06-06 17:44:31,649 - INFO - Consulta de todos os documentos
+2025-06-06 17:44:41,098 - INFO - Consulta de todos os documentos
+2025-06-06 17:44:44,219 - INFO - Consulta de todos os documentos
+2025-06-06 17:50:55,652 - INFO - Consulta de todos os documentos
+2025-06-06 17:50:59,049 - INFO - Consulta de todos os documentos
+2025-06-06 17:51:06,886 - INFO - Consulta de todos os documentos
+2025-06-06 17:59:31,296 - INFO - Consulta de todos os documentos
+2025-06-06 17:59:42,608 - INFO - Consulta de todos os documentos
+2025-06-06 18:01:45,031 - INFO - Consulta de todos os documentos
+2025-06-06 18:01:50,592 - INFO - Consulta de todos os documentos
+2025-06-06 18:01:51,797 - INFO - Consulta de todos os documentos
+2025-06-06 18:01:53,150 - INFO - Consulta de todos os documentos
+2025-06-06 18:02:23,082 - INFO - Consulta de todos os documentos

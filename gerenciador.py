@@ -1,438 +1,308 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, simpledialog, messagebox
-from tkinter import font as tkFont
 import os
 import shutil
 import sys
 import subprocess
 
-# --- Configurações da Janela Principal ---
-janela = tk.Tk()
-janela.title("SafeFile - Gerenciador de Arquivos")
-LARGURA_JANELA = 800
-ALTURA_JANELA = 600
-janela.geometry(f"{LARGURA_JANELA}x{ALTURA_JANELA}")
-janela.resizable(False, False)
+class TelaGerenciadorArquivos:
+    def __init__(self, janela_principal):
+        self.janela = janela_principal
+        self.janela.title("SafeFile - Gerenciador de Arquivos")
+        self.LARGURA_JANELA = 800
+        self.ALTURA_JANELA = 600
+        self.janela.geometry(f"{self.LARGURA_JANELA}x{self.ALTURA_JANELA}")
+        self.janela.resizable(False, False)
 
-# --- Cores ---
-cor_azul_claro = "#80DEEA"
-cor_azul_escuro = "#3161E6"
-cor_texto_titulo = "white"
-cor_botao_acao_bg = "#FFFFFF"
-cor_botao_acao_fg_text = "#3161E6"
-cor_botao_navegacao_bg = cor_azul_escuro
-cor_botao_navegacao_fg_text = "white"
-cor_botao_voltar_inicio_bg = "#D32F2F"
-cor_botao_voltar_inicio_fg = "white"
+        self.configurar_estilos()
+        self.criar_variaveis_tk()
+        self.criar_widgets()
+        self.carregar_dados_iniciais()
 
-# --- Fontes ---
-fonte_titulo_str = ("Arial", 36, "bold")
-fonte_geral_str = ("Arial", 10)
-fonte_botao_acao_str = ("Arial", 10, "bold")
-fonte_treeview_str = ("Arial", 10)
-fonte_path_entry_str = ("Arial", 10)
-fonte_botao_voltar_inicio_str = ("Arial", 10, "bold")
+    def configurar_estilos(self):
+        self.cor_azul_claro = "#80DEEA"
+        self.cor_azul_escuro = "#3161E6"
+        self.cor_texto_titulo = "white"
+        self.cor_botao_acao_bg = "#FFFFFF"
+        self.cor_botao_acao_fg_text = "#3161E6"
+        self.cor_botao_navegacao_bg = self.cor_azul_escuro
+        self.cor_botao_navegacao_fg_text = "white"
+        self.cor_botao_voltar_inicio_bg = "#D32F2F"
+        self.cor_botao_voltar_inicio_fg = "white"
+        
+        self.fonte_titulo_str = ("Arial", 36, "bold")
+        self.fonte_botao_acao_str = ("Arial", 10, "bold")
+        self.fonte_treeview_str = ("Arial", 10)
+        self.fonte_path_entry_str = ("Arial", 10)
+        self.fonte_botao_voltar_inicio_str = ("Arial", 10, "bold")
 
+        style = ttk.Style()
+        style.configure("mystyle.Treeview", highlightthickness=0, bd=0, font=self.fonte_treeview_str, rowheight=25)
+        style.configure("mystyle.Treeview.Heading", font=(self.fonte_treeview_str[0], int(self.fonte_treeview_str[1]), "bold"))
+        style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])
 
-# --- Variável Global para Caminho Atual ---
-diretorio_atual = tk.StringVar(value=os.path.abspath(os.getcwd()))
+    def criar_variaveis_tk(self):
+        self.diretorio_atual = tk.StringVar(value=os.path.abspath(os.getcwd()))
 
-# --- Canvas para o Gradiente de Fundo ---
-canvas_fundo = tk.Canvas(janela, highlightthickness=0)
-canvas_fundo.pack(fill="both", expand=True)
+    def criar_widgets(self):
+        self.criar_fundo_gradiente()
+        self.criar_navegacao_superior()
+        self.criar_visualizador_arquivos()
+        self.criar_botoes_acao()
 
-def desenhar_titulo_no_canvas():
-    canvas_fundo.delete("titulo_safefile")
-    canvas_fundo.create_text(
-        LARGURA_JANELA / 2,
-        ALTURA_JANELA * 0.10,
-        text="SafeFile",
-        font=fonte_titulo_str,
-        fill=cor_texto_titulo,
-        tags="titulo_safefile",
-        anchor="center"
-    )
+    def criar_fundo_gradiente(self):
+        self.canvas_fundo = tk.Canvas(self.janela, highlightthickness=0)
+        self.canvas_fundo.pack(fill="both", expand=True)
+        self.canvas_fundo.bind("<Configure>", self.desenhar_gradiente)
 
-def desenhar_gradiente(event=None):
-    canvas_fundo.delete("gradient")
-    largura_canvas_grad = LARGURA_JANELA
-    altura_canvas_grad = ALTURA_JANELA
+        tk.Button(self.janela, text="Voltar ao Início", font=self.fonte_botao_voltar_inicio_str,
+                  fg=self.cor_botao_voltar_inicio_fg, bg=self.cor_botao_voltar_inicio_bg,
+                  command=self.ir_para_script_inicio, relief=tk.FLAT, borderwidth=0,
+                  highlightthickness=0, cursor="hand2").place(relx=0.98, rely=0.02, anchor="ne", x=-10, y=10)
+        
+        self.janela.update_idletasks()
+        self.desenhar_gradiente()
 
-    # Fallback se as dimensões ainda forem muito pequenas no início
-    if largura_canvas_grad <= 1 or altura_canvas_grad <= 1:
-        largura_canvas_grad = janela.winfo_width()
-        altura_canvas_grad = janela.winfo_height()
-        if largura_canvas_grad <= 1 or altura_canvas_grad <= 1:
-            return
+    def desenhar_gradiente(self, event=None):
+        self.canvas_fundo.delete("gradient")
+        largura, altura = self.LARGURA_JANELA, self.ALTURA_JANELA
 
-    r1, g1, b1 = janela.winfo_rgb(cor_azul_escuro)[0]//256, janela.winfo_rgb(cor_azul_escuro)[1]//256, janela.winfo_rgb(cor_azul_escuro)[2]//256
-    r2, g2, b2 = janela.winfo_rgb(cor_azul_claro)[0]//256, janela.winfo_rgb(cor_azul_claro)[1]//256, janela.winfo_rgb(cor_azul_claro)[2]//256
+        r1,g1,b1 = self.janela.winfo_rgb(self.cor_azul_escuro)[0]//256, self.janela.winfo_rgb(self.cor_azul_escuro)[1]//256, self.janela.winfo_rgb(self.cor_azul_escuro)[2]//256
+        r2,g2,b2 = self.janela.winfo_rgb(self.cor_azul_claro)[0]//256, self.janela.winfo_rgb(self.cor_azul_claro)[1]//256, self.janela.winfo_rgb(self.cor_azul_claro)[2]//256
+        
+        for i in range(largura):
+            r,g,b = int(r1+(r2-r1)*i/largura), int(g1+(g2-g1)*i/largura), int(b1+(b2-b1)*i/largura)
+            self.canvas_fundo.create_line(i,0,i,altura, fill=f'#{r:02x}{g:02x}{b:02x}', tags="gradient")
 
-    for i in range(int(largura_canvas_grad)):
-        if largura_canvas_grad == 0: break
-        r = int(r1 + (r2 - r1) * (i / largura_canvas_grad))
-        g = int(g1 + (g2 - g1) * (i / largura_canvas_grad))
-        b = int(b1 + (b2 - b1) * (i / largura_canvas_grad))
-        cor = f'#{r:02x}{g:02x}{b:02x}'
-        canvas_fundo.create_line(i, 0, i, altura_canvas_grad, fill=cor, tags="gradient")
+        self.canvas_fundo.create_text(
+            largura/2, altura*0.10, text="SafeFile", font=self.fonte_titulo_str,
+            fill=self.cor_texto_titulo, tags="titulo_safefile"
+        )
+        
+        if hasattr(self, 'frame_navegacao'): self.frame_navegacao.lift()
+        if hasattr(self, 'tree_frame'): self.tree_frame.lift()
+        if hasattr(self, 'frame_botoes_acao'): self.frame_botoes_acao.lift()
 
-    desenhar_titulo_no_canvas()
-    if 'botao_voltar_inicio_widget' in globals() and botao_voltar_inicio_widget.winfo_exists():
-        botao_voltar_inicio_widget.lift()
+    def criar_navegacao_superior(self):
+        self.frame_navegacao = tk.Frame(self.janela, bg=self.cor_azul_escuro)
+        self.frame_navegacao.place(relx=0.05, rely=0.18, relwidth=0.9, height=40)
 
+        tk.Button(self.frame_navegacao, text="↑ Voltar", command=self.voltar_diretorio,
+                  font=self.fonte_botao_acao_str, fg=self.cor_botao_navegacao_fg_text, bg=self.cor_botao_navegacao_bg,
+                  relief=tk.FLAT, activebackground=self.cor_azul_claro, activeforeground="white").pack(side=tk.LEFT, padx=5, pady=5)
 
-# --- Função para Navegação para Início ---
-def ir_para_script_inicio():
-    print("Gerenciador: Voltando para o Início...")
-    try:
-        script_dir = os.path.dirname(__file__)
-        caminho_inicio_py = os.path.join(script_dir, "inicio.py")
+        path_entry = tk.Entry(self.frame_navegacao, textvariable=self.diretorio_atual, font=self.fonte_path_entry_str, bd=2, relief=tk.SUNKEN)
+        path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5, pady=5)
+        path_entry.bind("<Return>", self.navegar_pelo_entry)
+        
+        tk.Button(self.frame_navegacao, text="Ir", command=self.navegar_pelo_entry,
+                  font=self.fonte_botao_acao_str, fg=self.cor_botao_navegacao_fg_text, bg=self.cor_botao_navegacao_bg,
+                  relief=tk.FLAT, activebackground=self.cor_azul_claro, activeforeground="white").pack(side=tk.LEFT, padx=5, pady=5)
 
-        if os.path.exists(caminho_inicio_py):
-            janela.destroy()
-            subprocess.Popen([sys.executable, caminho_inicio_py])
-            print(f"Gerenciador: Executando '{caminho_inicio_py}'")
-        else:
-            messagebox.showerror("Erro de Navegação", f"Arquivo 'inicio.py' não encontrado em:\n{caminho_inicio_py}", parent=janela) # parent adicionado
-    except Exception as e:
-        messagebox.showerror("Erro de Navegação", f"Não foi possível iniciar 'inicio.py':\n{e}", parent=janela) # parent adicionado
+    def criar_visualizador_arquivos(self):
+        self.tree_frame = tk.Frame(self.janela)
+        self.tree_frame.place(relx=0.05, rely=0.26, relwidth=0.9, relheight=0.55)
 
+        self.tree = ttk.Treeview(self.tree_frame, columns=("path", "type"), displaycolumns=(), style="mystyle.Treeview")
+        self.tree.heading("#0", text="Nome", anchor='w')
+        self.tree.pack(side="left", fill="both", expand=True)
 
-# --- Botão Voltar ao Início ---
-botao_voltar_inicio_widget = tk.Button(
-    janela,
-    text="Voltar ao Início",
-    font=fonte_botao_voltar_inicio_str,
-    fg=cor_botao_voltar_inicio_fg,
-    bg=cor_botao_voltar_inicio_bg,
-    activebackground=cor_azul_claro,
-    activeforeground="white",
-    command=ir_para_script_inicio,
-    relief=tk.FLAT,
-    borderwidth=0,
-    highlightthickness=0,
-    cursor="hand2"
-)
-# Posiciona no canto superior direito, abaixo da barra de título
-botao_voltar_inicio_widget.place(relx=0.98, rely=0.02, anchor="ne", x=-10, y=10)
+        scrollbar = ttk.Scrollbar(self.tree_frame, orient="vertical", command=self.tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.tree.configure(yscrollcommand=scrollbar.set)
+        self.tree.bind("<Double-1>", self.on_item_double_click)
 
+    def criar_botoes_acao(self):
+        self.frame_botoes_acao = tk.Frame(self.janela, bg=self.cor_azul_escuro)
+        self.frame_botoes_acao.place(relx=0.05, rely=0.83, relwidth=0.9, height=80)
 
-# --- Funções de Gerenciamento de Arquivos ---
-def atualizar_lista_arquivos():
-    try:
-        path = diretorio_atual.get()
-        if not os.path.isdir(path):
-            messagebox.showerror("Erro de Caminho", f"O caminho '{path}' não é um diretório válido ou está inacessível.", parent=janela)
-            parent_dir = os.path.dirname(path)
-            if os.path.isdir(parent_dir):
-                diretorio_atual.set(parent_dir)
-            else:
-                diretorio_atual.set(os.path.abspath(os.getcwd()))
+        botoes_info = [("Criar Arquivo", self.criar_arquivo), ("Criar Pasta", self.criar_pasta),
+                       ("Apagar", self.apagar_item), ("Renomear", self.renomear_item),
+                       ("Mover", self.mover_item), ("Gerenciador", self.abrir_gerenciamento)]
 
-            path = diretorio_atual.get()
+        for texto, comando in botoes_info:
+            tk.Button(self.frame_botoes_acao, text=texto, command=comando,
+                      font=self.fonte_botao_acao_str, fg=self.cor_botao_acao_fg_text, bg=self.cor_botao_acao_bg,
+                      relief=tk.FLAT, activebackground="#E0E0E0", activeforeground=self.cor_botao_acao_fg_text,
+                      width=12, height=2).pack(side=tk.LEFT, expand=True, padx=5, pady=10)
+
+    def carregar_dados_iniciais(self):
+        self.atualizar_lista_arquivos()
+
+    def atualizar_lista_arquivos(self):
+        path = self.diretorio_atual.get()
+        try:
+            for i in self.tree.get_children():
+                self.tree.delete(i)
+
             if not os.path.isdir(path):
-                 messagebox.showerror("Erro Crítico", "Não foi possível encontrar um diretório válido para listar.", parent=janela)
-                 return
+                messagebox.showerror("Erro de Caminho", f"O diretório '{path}' não existe.", parent=self.janela)
+                self.diretorio_atual.set(os.path.abspath(os.getcwd()))
+                return
 
-        for i in tree.get_children():
-            tree.delete(i)
+            parent_dir = os.path.dirname(path)
+            if path != parent_dir:
+                self.tree.insert("", "end", text="..", values=(parent_dir, "folder_up"))
 
-        if os.path.abspath(path) != os.path.abspath(os.sep) and os.path.dirname(path) != path :
-            tree.insert("", "end", text="..", values=(os.path.dirname(path), "folder_up"))
+            items_list = []
+            for item_name in os.listdir(path):
+                try:
+                    item_path = os.path.join(path, item_name)
+                    is_dir = os.path.isdir(item_path)
+                    items_list.append((item_name, item_path, "folder" if is_dir else "file"))
+                except OSError:
+                    continue
+            
+            items_list.sort(key=lambda x: (x[2] != 'folder', x[0].lower()))
+            for item_name, item_path, tipo in items_list:
+                self.tree.insert("", "end", text=item_name, values=(item_path, tipo))
+        except Exception as e:
+            messagebox.showerror("Erro ao Listar", f"Não foi possível listar arquivos: {e}", parent=self.janela)
 
-        items_list = []
-        for item_name in os.listdir(path):
-            item_path = os.path.join(path, item_name)
+    def on_item_double_click(self, event):
+        item_id = self.tree.focus()
+        if not item_id:
+            return
+        item = self.tree.item(item_id)
+        path, item_type = item['values']
+
+        if item_type in ("folder", "folder_up"):
+            self.diretorio_atual.set(path)
+            self.atualizar_lista_arquivos()
+        elif item_type == "file":
             try:
-                is_dir = os.path.isdir(item_path)
-                items_list.append((item_name, item_path, "folder" if is_dir else "file"))
-            except OSError:
-                continue
-        
-        items_list.sort(key=lambda x: (x[2] != 'folder', x[0].lower())) 
+                if sys.platform == "win32":
+                    os.startfile(path)
+                elif sys.platform == "darwin":
+                    subprocess.call(["open", path])
+                else:
+                    subprocess.call(["xdg-open", path])
+            except Exception as e:
+                messagebox.showerror("Erro ao Abrir", f"Não foi possível abrir o arquivo:\n{e}", parent=self.janela)
 
-        for item_name, item_path, tipo in items_list:
-            tree.insert("", "end", text=item_name, values=(item_path, tipo))
-
-    except Exception as e:
-        messagebox.showerror("Erro ao Listar", f"Não foi possível listar arquivos: {e}", parent=janela)
-
-def on_item_double_click(event):
-    if not tree.selection(): return
-    item_id = tree.selection()[0]
-    item_text = tree.item(item_id, "text")
-    item_values = tree.item(item_id, "values")
-    
-    path = ""
-    item_type = ""
-
-    if not item_values:
-        if item_text == "..":
-            path = os.path.dirname(diretorio_atual.get())
-            item_type = "folder_up"
+    def navegar_pelo_entry(self, event=None):
+        path = self.diretorio_atual.get()
+        if os.path.isdir(path):
+            self.atualizar_lista_arquivos()
         else:
+            messagebox.showerror("Caminho Inválido", "O caminho especificado não é um diretório válido.", parent=self.janela)
+
+    def voltar_diretorio(self):
+        current_path = self.diretorio_atual.get()
+        parent_path = os.path.dirname(current_path)
+        if os.path.isdir(parent_path) and current_path != parent_path:
+            self.diretorio_atual.set(parent_path)
+            self.atualizar_lista_arquivos()
+
+    def criar_arquivo(self):
+        file_name = simpledialog.askstring("Criar Arquivo", "Digite o nome do novo arquivo:", parent=self.janela)
+        if file_name:
+            try:
+                file_path = os.path.join(self.diretorio_atual.get(), file_name)
+                if not os.path.exists(file_path):
+                    with open(file_path, 'a'):
+                        pass
+                    self.atualizar_lista_arquivos()
+                else:
+                    messagebox.showwarning("Aviso", "Um arquivo com este nome já existe.", parent=self.janela)
+            except Exception as e:
+                messagebox.showerror("Erro", f"Não foi possível criar o arquivo: {e}", parent=self.janela)
+
+    def criar_pasta(self):
+        folder_name = simpledialog.askstring("Criar Pasta", "Digite o nome da nova pasta:", parent=self.janela)
+        if folder_name:
+            try:
+                folder_path = os.path.join(self.diretorio_atual.get(), folder_name)
+                if not os.path.exists(folder_path):
+                    os.makedirs(folder_path)
+                    self.atualizar_lista_arquivos()
+                else:
+                    messagebox.showwarning("Aviso", "Uma pasta com este nome já existe.", parent=self.janela)
+            except Exception as e:
+                messagebox.showerror("Erro", f"Não foi possível criar a pasta: {e}", parent=self.janela)
+
+    def apagar_item(self):
+        item_id = self.tree.focus()
+        if not item_id:
+            messagebox.showwarning("Nenhum item selecionado", "Por favor, selecione um item para apagar.", parent=self.janela)
             return
-    else:
-        path = item_values[0]
-        item_type = item_values[1]
 
-
-    if item_type == "folder" or item_type == "folder_up":
-        try:
-            if not os.access(path, os.R_OK):
-                messagebox.showerror("Acesso Negado", f"Sem permissão para acessar:\n{path}", parent=janela)
-                return
-            diretorio_atual.set(os.path.abspath(path))
-            atualizar_lista_arquivos()
-        except Exception as e:
-            messagebox.showerror("Erro de Navegação", f"Não foi possível acessar o diretório: {path}\n{e}", parent=janela)
-    elif item_type == "file":
-        try:
-            if sys.platform == "win32":
-                os.startfile(path)
-            elif sys.platform == "darwin":
-                subprocess.Popen(["open", path])
-            else:
-                subprocess.Popen(["xdg-open", path])
-        except FileNotFoundError:
-            cmd_missing = 'open' if sys.platform == "darwin" else 'xdg-open'
-            messagebox.showerror("Erro ao Abrir", f"Comando '{cmd_missing}' não encontrado para abrir arquivos.", parent=janela)
-        except Exception as e:
-            messagebox.showerror("Erro ao Abrir", f"Não foi possível abrir o arquivo: {path}\n{e}", parent=janela)
-
-
-def navegar_pelo_entry(event=None):
-    novo_caminho = path_entry.get()
-    if os.path.isdir(novo_caminho):
-        if not os.access(novo_caminho, os.R_OK):
-            messagebox.showerror("Acesso Negado", f"Sem permissão para acessar:\n{novo_caminho}", parent=janela)
+        item = self.tree.item(item_id)
+        if item['values'][1] == 'folder_up':
             return
-        diretorio_atual.set(os.path.abspath(novo_caminho))
-        atualizar_lista_arquivos()
-    else:
-        messagebox.showerror("Erro de Caminho", "Caminho inválido ou não é um diretório.", parent=janela)
+            
+        if messagebox.askyesno("Confirmar Exclusão", f"Você tem certeza que deseja apagar '{item['text']}'?", parent=self.janela):
+            try:
+                item_path = item['values'][0]
+                if os.path.isdir(item_path):
+                    shutil.rmtree(item_path)
+                else:
+                    os.remove(item_path)
+                self.atualizar_lista_arquivos()
+            except Exception as e:
+                messagebox.showerror("Erro ao Apagar", f"Não foi possível apagar o item: {e}", parent=self.janela)
 
-def voltar_diretorio():
-    path_atual = diretorio_atual.get()
-    path_pai = os.path.dirname(path_atual)
-    if os.path.abspath(path_atual) != os.path.abspath(path_pai):
-        if not os.access(path_pai, os.R_OK):
-            messagebox.showerror("Acesso Negado", f"Sem permissão para acessar o diretório pai:\n{path_pai}", parent=janela)
+    def renomear_item(self):
+        item_id = self.tree.focus()
+        if not item_id:
+            messagebox.showwarning("Nenhum item selecionado", "Por favor, selecione um item para renomear.", parent=self.janela)
             return
-        diretorio_atual.set(path_pai)
-        atualizar_lista_arquivos()
-    else:
-        messagebox.showinfo("Info", "Já está no diretório raiz.", parent=janela)
 
-def criar_arquivo():
-    nome_arquivo = simpledialog.askstring("Criar Arquivo", "Nome do novo arquivo (com extensão):", parent=janela)
-    if nome_arquivo:
-        if os.path.sep in nome_arquivo or any(c in nome_arquivo for c in ['<', '>', ':', '"', '/', '\\', '|', '?', '*']):
-            messagebox.showerror("Nome Inválido", "O nome do arquivo contém caracteres inválidos.", parent=janela)
+        item = self.tree.item(item_id)
+        if item['values'][1] == 'folder_up':
             return
-        caminho_completo = os.path.join(diretorio_atual.get(), nome_arquivo)
-        try:
-            if not os.path.exists(caminho_completo):
-                with open(caminho_completo, "w", encoding='utf-8') as f:
-                    f.write("")
-                atualizar_lista_arquivos()
-                messagebox.showinfo("Sucesso", f"Arquivo '{nome_arquivo}' criado.", parent=janela)
-            else:
-                messagebox.showwarning("Aviso", f"Arquivo '{nome_arquivo}' já existe.", parent=janela)
-        except Exception as e:
-            messagebox.showerror("Erro ao Criar", f"Não foi possível criar o arquivo: {e}", parent=janela)
 
-def criar_pasta():
-    nome_pasta = simpledialog.askstring("Criar Pasta", "Nome da nova pasta:", parent=janela)
-    if nome_pasta:
-        if os.path.sep in nome_pasta or any(c in nome_pasta for c in ['<', '>', ':', '"', '/', '\\', '|', '?', '*']):
-            messagebox.showerror("Nome Inválido", "O nome da pasta contém caracteres inválidos.", parent=janela)
-            return
-        caminho_completo = os.path.join(diretorio_atual.get(), nome_pasta)
-        try:
-            os.makedirs(caminho_completo, exist_ok=False)
-            atualizar_lista_arquivos()
-            messagebox.showinfo("Sucesso", f"Pasta '{nome_pasta}' criada.", parent=janela)
-        except FileExistsError:
-            messagebox.showwarning("Aviso", f"A pasta '{nome_pasta}' já existe.", parent=janela)
-        except Exception as e:
-            messagebox.showerror("Erro ao Criar", f"Não foi possível criar a pasta: {e}", parent=janela)
-
-def apagar_item():
-    if not tree.selection():
-        messagebox.showwarning("Aviso", "Nenhum item selecionado.", parent=janela)
-        return
-
-    item_id = tree.selection()[0]
-    nome_item = tree.item(item_id, "text")
-    item_values = tree.item(item_id, "values")
-
-    if not item_values and nome_item == "..":
-        messagebox.showwarning("Aviso", "Não é possível apagar o item de navegação '..'.", parent=janela)
-        return
-    elif not item_values:
-        messagebox.showerror("Erro", "Item selecionado inválido para exclusão.", parent=janela)
-        return
+        old_name = item['text']
+        old_path = item['values'][0]
+        new_name = simpledialog.askstring("Renomear", f"Novo nome para '{old_name}':", initialvalue=old_name, parent=self.janela)
         
-    caminho_item = item_values[0]
+        if new_name and new_name != old_name:
+            try:
+                new_path = os.path.join(os.path.dirname(old_path), new_name)
+                os.rename(old_path, new_path)
+                self.atualizar_lista_arquivos()
+            except Exception as e:
+                messagebox.showerror("Erro ao Renomear", f"Não foi possível renomear: {e}", parent=self.janela)
 
-    confirmar = messagebox.askyesno("Confirmar Exclusão", f"Tem certeza que deseja apagar '{nome_item}'?\nEsta ação é irreversível!", icon='warning', parent=janela)
-    if confirmar:
-        try:
-            if os.path.isfile(caminho_item):
-                os.remove(caminho_item)
-            elif os.path.isdir(caminho_item):
-                shutil.rmtree(caminho_item)
-            atualizar_lista_arquivos()
-            messagebox.showinfo("Sucesso", f"'{nome_item}' apagado.", parent=janela)
-        except Exception as e:
-            messagebox.showerror("Erro ao Apagar", f"Não foi possível apagar '{nome_item}': {e}", parent=janela)
-
-def renomear_item():
-    if not tree.selection():
-        messagebox.showwarning("Aviso", "Nenhum item selecionado.", parent=janela)
-        return
-
-    item_id = tree.selection()[0]
-    nome_antigo = tree.item(item_id, "text")
-    item_values = tree.item(item_id, "values")
-
-    if not item_values and nome_antigo == "..":
-        messagebox.showwarning("Aviso", "Não é possível renomear o item de navegação '..'.", parent=janela)
-        return
-    elif not item_values:
-        messagebox.showerror("Erro", "Item selecionado inválido para renomear.", parent=janela)
-        return
-
-    caminho_antigo = item_values[0]
-
-    novo_nome = simpledialog.askstring("Renomear", f"Novo nome para '{nome_antigo}':", initialvalue=nome_antigo, parent=janela)
-    if novo_nome and novo_nome != nome_antigo:
-        if os.path.sep in novo_nome or any(c in novo_nome for c in ['<', '>', ':', '"', '/', '\\', '|', '?', '*']):
-            messagebox.showerror("Nome Inválido", "O novo nome contém caracteres inválidos.", parent=janela)
+    def mover_item(self):
+        item_id = self.tree.focus()
+        if not item_id:
+            messagebox.showwarning("Nenhum item selecionado", "Por favor, selecione um item para mover.", parent=self.janela)
             return
-        caminho_novo = os.path.join(diretorio_atual.get(), novo_nome)
-        try:
-            os.rename(caminho_antigo, caminho_novo)
-            atualizar_lista_arquivos()
-            messagebox.showinfo("Sucesso", f"'{nome_antigo}' renomeado para '{novo_nome}'.", parent=janela)
-        except Exception as e:
-            messagebox.showerror("Erro ao Renomear", f"Não foi possível renomear: {e}", parent=janela)
 
-def mover_item():
-    if not tree.selection():
-        messagebox.showwarning("Aviso", "Nenhum item selecionado.", parent=janela)
-        return
-
-    item_id = tree.selection()[0]
-    nome_item = tree.item(item_id, "text")
-    item_values = tree.item(item_id, "values")
-
-    if not item_values and nome_item == "..":
-        messagebox.showwarning("Aviso", "Não é possível mover o item de navegação '..'.", parent=janela)
-        return
-    elif not item_values:
-        messagebox.showerror("Erro", "Item selecionado inválido para mover.", parent=janela)
-        return
+        item = self.tree.item(item_id)
+        if item['values'][1] == 'folder_up':
+            return
+            
+        source_path = item['values'][0]
+        destination_folder = filedialog.askdirectory(title=f"Selecione a pasta de destino para '{item['text']}'", parent=self.janela)
         
-    caminho_origem = item_values[0]
+        if destination_folder:
+            try:
+                shutil.move(source_path, destination_folder)
+                self.atualizar_lista_arquivos()
+            except Exception as e:
+                messagebox.showerror("Erro ao Mover", f"Não foi possível mover o item: {e}", parent=self.janela)
 
-    novo_diretorio = filedialog.askdirectory(title=f"Mover '{nome_item}' para:", initialdir=diretorio_atual.get(), parent=janela)
-    if novo_diretorio:
-        caminho_destino = os.path.join(novo_diretorio, nome_item)
-        if os.path.abspath(caminho_origem) == os.path.abspath(caminho_destino):
-            messagebox.showinfo("Info", "O local de origem e destino são os mesmos.", parent=janela)
-            return
-        if os.path.exists(caminho_destino):
-            confirmar_subs = messagebox.askyesno("Confirmar Substituição",
-                                                 f"O item '{nome_item}' já existe em '{novo_diretorio}'. Deseja substituí-lo?",
-                                                 icon='warning', parent=janela)
-            if not confirmar_subs:
-                messagebox.showinfo("Movimentação Cancelada", "A operação foi cancelada.", parent=janela)
-                return
+    def abrir_nova_janela(self, nome_arquivo_py):
         try:
-            shutil.move(caminho_origem, caminho_destino)
-            atualizar_lista_arquivos()
-            messagebox.showinfo("Sucesso", f"'{nome_item}' movido para '{novo_diretorio}'.", parent=janela)
+            caminho_script = os.path.join(os.path.dirname(__file__), nome_arquivo_py)
+            if os.path.exists(caminho_script):
+                self.janela.destroy()
+                subprocess.Popen([sys.executable, caminho_script])
+            else:
+                messagebox.showerror("Erro de Navegação", f"Arquivo '{nome_arquivo_py}' não encontrado.", parent=self.janela)
         except Exception as e:
-            messagebox.showerror("Erro ao Mover", f"Não foi possível mover '{nome_item}': {e}", parent=janela)
+            messagebox.showerror("Erro de Navegação", f"Não foi possível iniciar '{nome_arquivo_py}':\n{e}", parent=self.janela)
 
-# --- Função para abrir gerenciamento.py ---
-def abrir_gerenciamento():
-    print("Gerenciador: Abrindo 'gerenciamento.py'...")
-    try:
-        script_dir = os.path.dirname(__file__)
-        caminho_gerenciamento_py = os.path.join(script_dir, "gerenciamento.py")
+    def ir_para_script_inicio(self):
+        self.abrir_nova_janela("inicio.py")
 
-        if os.path.exists(caminho_gerenciamento_py):
-            janela.destroy()
-            subprocess.Popen([sys.executable, caminho_gerenciamento_py])
-            print(f"Gerenciador: Executando '{caminho_gerenciamento_py}'")
-        else:
-            messagebox.showerror("Erro de Navegação", f"Arquivo 'gerenciamento.py' não encontrado em:\n{caminho_gerenciamento_py}", parent=janela)
-    except Exception as e:
-        messagebox.showerror("Erro de Navegação", f"Não foi possível iniciar 'gerenciamento.py':\n{e}", parent=janela)
+    def abrir_gerenciamento(self):
+        self.abrir_nova_janela("gerenciamento.py")
 
 
-# --- Widgets da Interface do Gerenciador de Arquivos ---
-frame_navegacao = tk.Frame(janela, bg=cor_azul_escuro)
-frame_navegacao.place(relx=0.05, rely=0.18, relwidth=0.9, height=40)
-
-btn_voltar = tk.Button(frame_navegacao, text="↑ Voltar", command=voltar_diretorio,
-                       font=fonte_botao_acao_str, fg=cor_botao_navegacao_fg_text, bg=cor_botao_navegacao_bg,
-                       relief=tk.FLAT, activebackground=cor_azul_claro, activeforeground="white")
-btn_voltar.pack(side=tk.LEFT, padx=5, pady=5)
-
-path_entry = tk.Entry(frame_navegacao, textvariable=diretorio_atual, font=fonte_path_entry_str, bd=2, relief=tk.SUNKEN)
-path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5, pady=5)
-path_entry.bind("<Return>", navegar_pelo_entry)
-
-btn_ir = tk.Button(frame_navegacao, text="Ir", command=navegar_pelo_entry,
-                   font=fonte_botao_acao_str, fg=cor_botao_navegacao_fg_text, bg=cor_botao_navegacao_bg,
-                   relief=tk.FLAT, activebackground=cor_azul_claro, activeforeground="white")
-btn_ir.pack(side=tk.LEFT, padx=5, pady=5)
-
-style = ttk.Style()
-style.configure("mystyle.Treeview", highlightthickness=0, bd=0, font=fonte_treeview_str, rowheight=25)
-style.configure("mystyle.Treeview.Heading", font=(fonte_treeview_str[0], int(fonte_treeview_str[1]), "bold")) # Fonte da treeview heading
-style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])
-
-tree_frame = tk.Frame(janela)
-tree_frame.place(relx=0.05, rely=0.26, relwidth=0.9, relheight=0.55)
-
-tree = ttk.Treeview(tree_frame, columns=("path", "type"), displaycolumns=(), style="mystyle.Treeview")
-tree.heading("#0", text="Nome", anchor='w')
-tree.pack(side="left", fill="both", expand=True)
-
-scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
-scrollbar.pack(side="right", fill="y")
-tree.configure(yscrollcommand=scrollbar.set)
-
-tree.bind("<Double-1>", on_item_double_click)
-
-frame_botoes_acao = tk.Frame(janela, bg=cor_azul_escuro)
-frame_botoes_acao.place(relx=0.05, rely=0.83, relwidth=0.9, height=80)
-
-botoes_info = [
-    ("Criar Arquivo", criar_arquivo),
-    ("Criar Pasta", criar_pasta),
-    ("Apagar", apagar_item),
-    ("Renomear", renomear_item),
-    ("Mover", mover_item),
-    ("Gerenciador", abrir_gerenciamento)
-]
-
-for i, (texto, comando) in enumerate(botoes_info):
-    btn = tk.Button(frame_botoes_acao, text=texto, command=comando,
-                    font=fonte_botao_acao_str, fg=cor_botao_acao_fg_text, bg=cor_botao_acao_bg,
-                    relief=tk.FLAT, activebackground="#E0E0E0", activeforeground=cor_botao_acao_fg_text,
-                    width=12, height=2)
-    btn.pack(side=tk.LEFT, expand=True, padx=5, pady=10)
-
-# --- Inicialização ---
-janela.update_idletasks()
-desenhar_gradiente()
-canvas_fundo.bind("<Configure>", desenhar_gradiente)
-atualizar_lista_arquivos()
-
-janela.mainloop()
+if __name__ == "__main__":
+    janela_principal = tk.Tk()
+    app = TelaGerenciadorArquivos(janela_principal)
+    janela_principal.mainloop()

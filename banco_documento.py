@@ -6,6 +6,7 @@ from documento import Documento
 import hashlib
 from usuario import Usuario
 
+
 class BancoDocumento:
     def __init__(self, nome_banco="banco_documento.sqlite"):
         # Define e cria a pasta 'banco' automaticamente se não existir
