@@ -1,6 +1,7 @@
 import logging
 
 
+
 logging.basicConfig(
     filename='app_documento.log',
     level=logging.INFO,
